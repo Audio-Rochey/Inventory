@@ -1,0 +1,6 @@
+[mysqlinfo]
+host=localhost
+user=whatevernameyouuse
+passwd=whateverpassyouruse
+db=nameofyourdbase
+
