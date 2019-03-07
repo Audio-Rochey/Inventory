@@ -13,14 +13,7 @@ from time import sleep
 import os
 
 
-con = pymysql.connect(
-    host="localhost",
-    user="eainventoryadmin",
-    passwd="eainventoryadmin",
-    db="expataudioinventory",
-    charset= "utf8mb4",
-    cursorclass=pymysql.cursors.DictCursor
-)
+
 
 print("****     MAKE SURE PUTTY IS CONNECTED TO THE SERVER!    ****")
 print("**** This Program is to update the location of products ****")
