@@ -3,6 +3,7 @@
 # 3/3/2019
 # this website was very helpful: http://zetcode.com/python/pymysql/
 # Added voice playback for PID's
+# Moved database credentials to pymysqllogin.cnf
 
 
 import pymysql
@@ -11,19 +12,27 @@ from playsound import playsound
 import pyglet
 from time import sleep
 import os
+from configparser import ConfigParser
 
+config = ConfigParser()
+config.read("pymysqllogin.cnf")
+mysqluser = config.get('mysqlinfo', 'user')
+mysqlpasswd = config.get('mysqlinfo', 'passwd')
+mysqlhost = config.get('mysqlinfo', 'host')
+mysqldb = config.get('mysqlinfo', 'db')
 
 con = pymysql.connect(
-    host="localhost",
-    user="addyourown",
-    passwd="addyourown",
-    db="addyourown",
+    host=mysqlhost,
+    user=mysqluser,
+    passwd=mysqlpasswd,
+    db=mysqldb,
     charset= "utf8mb4",
     cursorclass=pymysql.cursors.DictCursor
 )
 
 print("****     MAKE SURE PUTTY IS CONNECTED TO THE SERVER!    ****")
 print("**** This Program is to update the location of products ****")
+print("**** Press q to quit                                    ****")
 print("")
 
 storageidtoupdate = input('Whats the name of the storage? ')
@@ -39,6 +48,8 @@ count = 0
 
 while var == 1 :
     pidsearch = input('Enter PID in PIDxxxxx format ')
+    if pidsearch == "q":
+        break
     with con.cursor() as cursor:
         try:
 
