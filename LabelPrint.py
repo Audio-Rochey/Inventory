@@ -4,7 +4,7 @@
 
 # dev version trying to add an image of the label
 
-This is designed for Python 2.7
+#This is designed for Python 2.7
 
 import os, sys
 import csv #added for csv support
