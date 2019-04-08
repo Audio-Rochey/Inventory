@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# 04/08/2019 This runs on a raspberry pi that has a 3.5" HDMI display attached to it.
+# Resolution is abotu 300 x 480
+# Video at https://www.facebook.com/ExpatAudio/videos/2042773462693091/
+
+
+import tkinter as tk
+import requests
+
+
+#bits from SSHtunneler etc.
+from sshtunnel import SSHTunnelForwarder
+from configparser import ConfigParser
+
+import MySQLdb as mdb
+
+
+
+# A separate file called mysqllogin.cnf needs to be created with the following:
+# [mysqlinfo]
+# host=localhost
+# user=usernameofthemysqluser
+# passwd=passwordofthemysqluser
+# db=name of the database
+
+# [earemoteaccess]
+# eahost= ssh tunnel target ip address
+# earemoteuser= ssh username
+# earemotepass= ssh user password
+
+
+
+config = ConfigParser()
+config.read("/home/pi/Documents/python/mysqllogin.cnf")
+mysqluser = config.get('mysqlinfo', 'user')
+mysqlpasswd = config.get('mysqlinfo', 'passwd')
+mysqlhost = config.get('mysqlinfo', 'host')
+mysqldb = config.get('mysqlinfo', 'db')
+
+remote_user = config.get('earemoteaccess', 'earemoteuser')
+remote_pass = config.get('earemoteaccess', 'earemotepass')
+remote_host = config.get('earemoteaccess', 'eahost')
+remote_port = 22
+local_host = '127.0.0.1'
+local_port = 3306
+
+# SSH Server Details
+
+
+server = SSHTunnelForwarder(
+   (remote_host, remote_port),
+   ssh_username=remote_user,
+   ssh_password=remote_pass,
+   remote_bind_address=(local_host, local_port),
+   local_bind_address=(local_host, local_port),
+   )
+   
+   
+   
+# Back to GUI STuff.
+
+
+HEIGHT = 300
+WIDTH = 480
+
+
+	
+def get_location(pidsearch):
+	try:
+		server.start()  # Open the SSH Tunnel, only after text has been entered.
+		con = mdb.connect(host="127.0.0.1",port=3306,user=mysqluser,passwd=mysqlpasswd,db=mysqldb) # Connect to the MySQL server.
+		cur = con.cursor(mdb.cursors.DictCursor)
+		cur.execute("SELECT `Product ID`, `STORAGELABEL`, `Sample_Storage_ID` FROM `TABLE 1` WHERE `Product ID` LIKE %s", [pidsearch])      
+		ver = cur.fetchone()
+	#Print out the result
+		txttoprint = ver["STORAGELABEL"]
+		storageID = ver["Sample_Storage_ID"]
+		print (txttoprint)
+		print (storageID)
+		final_str = '%s = %s \nis in \n%s' % (pidsearch, txttoprint, storageID)
+	except:
+		print ('There Was a Problem!')
+		final_str = 'There was a problem'
+	
+	
+	label['text'] = (final_str)
+	pid_entry.delete(0, "end")
+	#Disconnect
+	server.stop()       
+
+
+def put_location(pidsearch, stoid):
+	try:
+		server.start()  # Open the SSH Tunnel, only after text has been entered.
+		print ('Tunnel started')
+		con = mdb.connect(host="127.0.0.1",port=3306,user=mysqluser,passwd=mysqlpasswd,db=mysqldb) # Connect to the MySQL server.
+		print ('Server Connected')
+		cur = con.cursor(mdb.cursors.DictCursor)
+	
+
+		cur.execute(""" UPDATE `TABLE 1` SET `Sample_Storage_ID`=%s WHERE `Product ID` LIKE %s""", (stoid, pidsearch))
+	
+		print ('SQL Update made')
+		con.commit()		
+		print ('Commited')
+		final_str = 'Commit success'
+
+	except:
+		print ('There Was a Problem!')
+		final_str = 'There was a problem'
+	
+	
+	label['text'] = (final_str)
+	pid_entry.delete(0, "end")
+	#Disconnect
+	server.stop()       
+
+
+root = tk.Tk()
+root.title( "Expat Audio Inventory Tools" )
+canvas = tk.Canvas(root, height=HEIGHT, width=WIDTH)
+canvas.pack()
+
+background_image = tk.PhotoImage(file='landscape.png')
+background_label = tk.Label(root, image=background_image)
+background_label.place(relwidth=1, relheight=1)
+
+button_frame = tk.Frame(root, bg='#80c1ff', bd=5)
+button_frame.place(relx=0.5, rely=0.1, relwidth=0.8, relheight=0.4, anchor='n')
+
+pid_entry = tk.Entry(button_frame, font="Monospace 14")
+#entry.bind("<Button-1>", clear_search) 
+pid_entry.place(rely=0, relwidth=0.65, relheight=0.5)
+
+sid_entry = tk.Entry(button_frame, font="Monospace 14")
+sid_entry.place(rely=0.5, relwidth=0.65, relheight=0.5)
+
+pid_button = tk.Button(button_frame, text="Locate", font="Monospace 14", command=lambda: get_location(pid_entry.get()))
+pid_button.place(rely=0, relx=0.7, relheight=0.5, relwidth=0.3)
+
+sid_button = tk.Button(button_frame, text="Place", font="Monospace 14", command=lambda: put_location(pid_entry.get(), sid_entry.get()))
+sid_button.place(rely=0.5, relx=0.7, relheight=0.5, relwidth=0.3)
+
+# middle_frame = tk.Frame(root, bg='#80c1ff', bd=10)
+# middle_frame.place(relx=0.5, rely=0.4, relwidth=0.8, relheight=0.5, anchor='n')
+
+
+lower_frame = tk.Frame(root, bg='#80c1ff', bd=10)
+lower_frame.place(relx=0.5, rely=0.6, relwidth=0.8, relheight=0.4, anchor='n')
+
+label = tk.Label(lower_frame, font="Monospace 12")
+label.place(relwidth=1, relheight=1)
+
+root.mainloop()
