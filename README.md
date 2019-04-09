@@ -10,3 +10,4 @@ In the Repo, there is:
 1) Example of the database in excel format (so you can see the headers etc)
 2) Python 2.7 app that can connected, lookup and print a Zebra LP2824 label to go on the front of boxes
 3) Python app to bulk-add PID's drawers into storage unit.
+4) A GUI made for a standalone Raspberry pi with a 3.5" LCD that has a barcode scanner attached. Scan the box and it'll tell you where it should go.
